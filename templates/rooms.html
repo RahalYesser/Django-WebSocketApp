@@ -7,20 +7,19 @@
 {% block content %}
 {% if user.is_authenticated %}
 
-  <div class="container">
+  <div class="container pt-2">
     <div class="alert alert-info d-flex justify-content-between" role="alert">
         <h5>Available Public Rooms</h5>
         <form method="post" action="{% url 'logout' %}">
           {% csrf_token %}
-          <button type="submit" class="btn btn-light">Click to Log Out</button>
+          <button type="submit" class="btn btn-primary">Click to Log Out</button>
         </form>
       </div>
       
       
       {% if rooms %}
         <div class="row equal">
-            {% for room in rooms %}
-            
+            {% for room in rooms %}        
             <div class="col-sm-4 d-flex pb-3">
                 <div class="card bg-light mb-3" style="max-width: 18rem;">
                     <div class="card-block">
@@ -43,14 +42,17 @@
 
 
 {% else %}
-<div class="container">
-    <div class="alert alert-info d-flex justify-content-between" role="alert">
-        <h5>You are not logged in</h5>
-        <a href="/accounts/logout/">
-          <button type="button" class="btn btn-light"><a href="{% url 'login' %}">Log In</a></button>
-        </a>
-      </div>
-</div>  
+<div class="d-flex justify-content-center pt-5">
+  <div class="card" style="width: 18rem;">
+    {% load static %}
+      <img class="card-img-top p-4" width="400px" src="{% static 'images/chatapp-logo.png' %}" alt="Logo">
+    <div class="card-body justify-content-center">
+      <h5 class="card-title d-flex justify-content-center pb-3">Your not logged In</h5>
+      <a class="d-flex justify-content-center" href="{% url 'login' %}"><button type="button" class="btn btn-primary btn-lg btn-block">Log In</button></a>
+    </div>
+  </div>
+</div>
+ 
 {% endif %}
 
 <br/>

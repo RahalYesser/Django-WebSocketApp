@@ -8,11 +8,11 @@
     <div class="row d-flex justify-content-center">
         <div class="col-12">
             <div class="alert alert-info d-flex justify-content-between" role="alert">
-              <h5>ROOM :- {{room_name}}</h5>
+              <h5>ROOM : {{room_name}}</h5>
               <form method="post" action="{% url 'logout' %}">
                 {% csrf_token %}
-                <button type="submit" class="btn btn-light">Click to Log Out</button>
-            </form>
+                <button type="submit" class="btn btn-primary">Click to Log Out</button>
+              </form>
             </div>
             <form>
                 <div class="form-group">
@@ -22,7 +22,7 @@
                     
                       {% for message in messages %}
                         <div class="chat-message {% if message.user == request.user %}text-right{% else %}text-left{% endif %}">
-                          <b>{{ message.user.username }}</b> : {{ message.content }}<br>
+                           <b>{{ message.user.username }}</b> : {{ message.content }}<br>
                         </div>
                         {% endfor %}
                     
@@ -38,13 +38,131 @@
                 <div class="form-group" style="width: 100%;">
                     <input class="form-control" placeholder="Enter text here" id="my_input" type="text" required></br>
                 </div>
-                <br/>
                 <input class="btn btn-primary btn-lg btn-block" id="submit_button" type="button" value="Send">
             </form>
         </div>
     </div>
 </div>
 {{slug|json_script:"room_slug"}}
+
+{% comment %} 
+<script>
+  const chatbox = document.querySelector("#chatbox");
+
+  // Function to scroll to the bottom of the chatbox
+  function scrollToBottom() {
+      chatbox.scrollTop = chatbox.scrollHeight;
+  }
+
+  // Scroll to bottom when the page is loaded
+  scrollToBottom();
+
+  // Get the room name from the DOM
+  const roomName = JSON.parse(document.getElementById('room_slug').textContent);
+  let chatSocket;
+
+  function connect() {
+      chatSocket = new WebSocket("ws://" + window.location.host + "/ws/" + roomName + "/");
+
+      chatSocket.onopen = function (e) {
+          console.log("WebSocket connection established.");
+      };
+
+      chatSocket.onclose = function (e) {
+          console.log("WebSocket connection closed. Attempting to reconnect...");
+          setTimeout(connect, 1000); // Attempt to reconnect every 1 second
+      };
+
+      chatSocket.onerror = function (e) {
+          console.error("WebSocket error:", e);
+      };
+
+      chatSocket.onmessage = function (e) {
+          console.log("On message event triggered.");
+          try {
+              const data = JSON.parse(e.data);
+              var div = document.createElement("div");
+              div.innerHTML=div.innerHTML = "<b>" + data.username + "</b> : " + data.message;
+
+              // Add class based on user authentication
+              if (data.username === "{{ request.user.username }}") {
+                  div.classList.add("chat-message", "text-right");
+              } else {
+                  div.classList.add("chat-message", "text-left");
+              }
+
+              document.querySelector("#chatbox").appendChild(div);
+              scrollToBottom();  // Scroll to the bottom of the chatbox
+          } catch (error) {
+              console.error("Error processing WebSocket message:", error);
+          }
+      };
+
+      // Listen for messages
+      chatSocket.addEventListener("message", (event) => {
+          console.log("Message from server", event.data);
+      });
+  }
+
+  connect();  // Initial connection
+
+  document.querySelector("#my_input").onkeyup = function (e) {
+      if (e.keyCode === 13) {
+          e.preventDefault();
+          document.querySelector("#submit_button").click();
+      }
+  };
+
+  document.querySelector("#submit_button").onclick = function (e) {
+      const messageInput = document.querySelector("#my_input");
+      const messageContent = messageInput.value.trim();
+
+      if (messageContent.length === 0) {
+          alert("Add some Input First Or Press Send Button!");
+      } else {
+          sendMessage(messageContent);
+      }
+  };
+
+  function sendMessage(messageContent) {
+      if (chatSocket.readyState === WebSocket.OPEN) {
+          try {
+              console.log("Sending message:", messageContent);
+              chatSocket.send(JSON.stringify({
+                  message: messageContent,
+                  username: "{{ request.user.username }}",
+                  room_name: "{{ room_name }}"
+              }));
+
+              document.querySelector("#my_input").value = "";  // Clear input field
+              //showSuccessMessage(messageContent);
+              console.log("Input cleared:", messageContent);
+          } catch (error) {
+              console.error("Error sending WebSocket message:", error);
+              alert("Failed to send message. Please try again.");
+          }
+      } else {
+          console.error("WebSocket is not open. ReadyState: " + chatSocket.readyState);
+          alert("WebSocket connection is not open. Please wait a moment and try again.");
+      }
+  }
+
+  function showSuccessMessage(messageContent) {
+      const successMessage = document.createElement('div');
+      successMessage.classList.add('alert', 'alert-success', 'mt-2');
+      successMessage.innerHTML = `Message "${messageContent}" sent successfully!`;
+
+      // Append the success message
+      document.querySelector('.form-group').appendChild(successMessage);
+
+      // Remove the success message after 2 seconds
+      setTimeout(() => {
+          successMessage.remove();
+      }, 1000);
+  }
+</script>
+{% endcomment %}
+
 <script>
 
 const chatbox = document.querySelector("#chatbox");
@@ -65,17 +183,19 @@ const chatbox = document.querySelector("#chatbox");
     chatSocket.onopen = function (e) {
       console.log("The connection was setup successfully !");
     };
+
     chatSocket.onclose = function (e) {
       console.log("Something unexpected happened !");
     };
 
-    document.querySelector("#my_input").focus();
+    document.querySelector("#my_input").focus(); 
     document.querySelector("#my_input").onkeyup = function (e) {
       if (e.keyCode == 13) {
         e.preventDefault();
         document.querySelector("#submit_button").click();
       }
     };
+
     document.querySelector("#submit_button").onclick = function (e) {
       var messageInput = document.querySelector(
         "#my_input"
@@ -87,15 +207,18 @@ const chatbox = document.querySelector("#chatbox");
         }
         else
         {
-          chatSocket.send(JSON.stringify({ message: messageInput, username : "{{request.user.username}}",room_name:"{{room_name}}"}));
-          
-         
+                      
+           chatSocket.send(JSON.stringify({ message: messageInput, username : "{{request.user.username}}",room_name:"{{room_name}}"}));           
+                          
         }
       
     };
 
+
+          
     chatSocket.onmessage = function (e) {
       const data = JSON.parse(e.data);
+      console.log(data);
       var div = document.createElement("div");
       div.innerHTML = "<b>" + data.username + "</b> : " + data.message;
 
@@ -110,24 +233,27 @@ const chatbox = document.querySelector("#chatbox");
       document.querySelector("#chatbox").appendChild(div);
       scrollToBottom();
     };
-  </script>
+
+  </script> 
 
 
 
 {% else %}
-<div class="container">
-    <div class="alert alert-info d-flex justify-content-between" role="alert">
-        <h5>You are not logged in</h5>
-        <a href="/accounts/logout/">
-          <button type="button" class="btn btn-light"><a href="{% url 'login' %}">Log In</a></button>
-        </a>
-      </div>
-</div>  
+<div class="d-flex justify-content-center pt-5">
+  <div class="card" style="width: 18rem;">
+    {% load static %}
+      <img class="card-img-top p-4" width="400px" src="{% static 'images/chatapp-logo.png' %}" alt="Logo">
+    <div class="card-body justify-content-center">
+      <h5 class="card-title d-flex justify-content-center pb-3">Your not logged In</h5>
+      <a class="d-flex justify-content-center" href="{% url 'login' %}"><button type="button" class="btn btn-primary btn-lg btn-block">Log In</button></a>
+    </div>
+  </div>
+</div>
+
 {% endif %}
 
 <br/>
 
-    
 
 
 

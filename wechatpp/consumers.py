@@ -1,6 +1,8 @@
+import datetime
 import json
 from channels.generic.websocket import AsyncWebsocketConsumer
 from asgiref.sync import sync_to_async
+from django.core.exceptions import ObjectDoesNotExist
 
 from chatapp.models import Room,Message,User
 
@@ -8,7 +10,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
     async def connect(self):
         self.room_name = self.scope['url_route']['kwargs']['room_slug']
         self.roomGroupName = 'chat_%s' % self.room_name
-        
+
         await self.channel_layer.group_add(
             self.roomGroupName,
             self.channel_name
@@ -26,7 +28,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
         message = text_data_json["message"]
         username = text_data_json["username"]
         room_name = text_data_json["room_name"]
-        
+        print("here 1")
         await self.save_message(message, username, room_name)     
 
         await self.channel_layer.group_send(
@@ -47,6 +49,5 @@ class ChatConsumer(AsyncWebsocketConsumer):
     def save_message(self, message, username, room_name):
         print(username,room_name,"----------------------")
         user=User.objects.get(username=username)
-        room=Room.objects.get(name=room_name)
-        
+        room=Room.objects.get(name=room_name)        
         Message.objects.create(user=user,room=room,content=message)
